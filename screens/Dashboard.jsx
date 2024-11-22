@@ -48,7 +48,8 @@ const Dashboard = () => {
                     }}>
                         <AntDesign name="home" size={size} color={color} />
                     </View>
-                )
+                ),
+
             }} />
             <Tab.Screen name='account' component={Account} options={{
                 headerShown: false,
@@ -63,6 +64,11 @@ const Dashboard = () => {
                         alignItems: "center", borderRadius: 16,
                     }}>
                         <IonIcons name="person-circle-outline" size={size} color={color} />
+                    </View>
+                ),
+                header: () => (
+                    <View style={{ flexDirection: "row", display: "flex", alignItems: "center" }}>
+                        <Text style={{ fontSize: 20, fontWeight: "bold" }}>Profile</Text>
                     </View>
                 )
             }} />

@@ -30,7 +30,9 @@ const App = () => {
             <Stack.Screen
               name="dashboard"
               component={Dashboard}
-              options={{ headerShown: false }}
+              options={{
+                headerShown: false,
+              }}
             />
             <Stack.Screen
               name="order-request"
