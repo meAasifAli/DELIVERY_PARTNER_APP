@@ -1,14 +1,18 @@
 import { io } from "socket.io-client";
-import { BASE_URI } from "./url";
+import { BASEURL } from "./url";
 
 
 let socket;
 export const initialiseSocket = (token) => {
-    socket = io(BASE_URI, {
+    socket = io(BASEURL, {
         transports: ["websocket"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        timeout: 10000,
         query: {
             token
         }
     })
     return socket
 }
+

@@ -1,13 +1,15 @@
-import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
+import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
 import AntDesign from 'react-native-vector-icons/AntDesign'
 import { useNavigation } from '@react-navigation/native'
 import Entypo from 'react-native-vector-icons/Entypo'
 import { useState } from 'react'
 import RadioButton from 'react-native-radio-button'
 import useUploadVehicleDetails from '../../hooks/useUploadVehicleDetails'
+import DocumentPicker, { types } from 'react-native-document-picker'
 
 
 const VehicleDetails = () => {
+    const [imgUrl, setImgUrl] = useState("")
     const { handleUploadVehicleDetails } = useUploadVehicleDetails()
     const [inputs, setInputs] = useState({
         vehicleNumber: "",
@@ -15,14 +17,32 @@ const VehicleDetails = () => {
     })
     const [type, setType] = useState("Bike")
 
+    const vehicleUpload = async () => {
+        try {
+            const result = await DocumentPicker.pickSingle({
+                type: [types.images],
+                allowMultiSelection: false
+            })
+            setImgUrl(result)
+        } catch (error) {
+            Alert.alert("Error in uploading Car: ", error?.message)
+        }
+    }
+
 
     const handleUpload = async () => {
-        await handleUploadVehicleDetails({
-            vehicle_no: inputs?.vehicleNumber,
-            registration_no: inputs?.registrationNumber,
-            vehicle_type: type,
-            vehicle_image: "https://example.com/vehicle.jpg"
-        })
+        const formData = new FormData()
+        formData.append("vehicle_no", inputs?.vehicleNumber)
+        formData.append("registration_no", inputs?.registrationNumber)
+        formData.append("vehicle_type", type)
+        if (imgUrl) {
+            formData.append("vehicle_image", {
+                uri: imgUrl?.uri,
+                type: imgUrl?.type,
+                name: imgUrl?.name
+            })
+        }
+        await handleUploadVehicleDetails(formData)
     }
     return (
         <View style={styles.container}>
@@ -31,7 +51,7 @@ const VehicleDetails = () => {
                 <Input val={inputs.vehicleNumber} setVal={(text) => setInputs({ ...inputs, vehicleNumber: text })} label={"Vehicle Number"} placeholder={"Enter Vehicle Number"} />
                 <Input val={inputs.registrationNumber} setVal={(text) => setInputs({ ...inputs, registrationNumber: text })} label={"Registration Number"} placeholder={"Enter Vehicle Registration Number"} />
                 <VehicleType type={type} setType={setType} />
-                <VehicleUpload />
+                <VehicleUpload vehcileUri={imgUrl} onUpload={vehicleUpload} />
                 <TouchableOpacity onPress={handleUpload} style={{ marginVertical: "10%", backgroundColor: "#FA4A0C", borderRadius: 10, height: 50, display: "flex", justifyContent: "center", alignItems: "center", width: "80%", marginHorizontal: "auto" }}>
                     <Text style={{ color: "#fff", fontSize: 16, fontFamily: "OpenSans-Medium", textAlign: "center", }}>Submit</Text>
                 </TouchableOpacity>
@@ -116,7 +136,7 @@ const VehicleType = ({ type, setType }) => {
     )
 }
 
-const VehicleUpload = () => {
+const VehicleUpload = ({ onUpload, vehcileUri }) => {
     return (
         <View style={{ marginTop: "10%", padding: "5%", width: "90%", marginHorizontal: "auto", borderStyle: "dashed", borderColor: "#6D6D6D", borderWidth: 1, borderRadius: 10 }}>
             <View>
@@ -131,20 +151,27 @@ const VehicleUpload = () => {
                     Vehicle Number visible on it.
                 </Text>
             </View>
-            <View style={{ marginTop: "40%" }}>
-                <TouchableOpacity style={{
-                    width: "90%",
-                    marginHorizontal: "auto",
-                    borderColor: "#6D6D6D",
-                    borderWidth: 1,
-                    borderRadius: 10,
-                    padding: 10,
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                    justifyContent: "center"
-                }}>
+            <View style={{ marginVertical: 20, width: "70%", marginHorizontal: "auto", borderStyle: "dashed", borderWidth: 1, borderColor: "#969AA4", borderRadius: 10 }}>
+                <Image style={{ width: "100%", objectFit: "cover", height: 150 }} source={{
+                    uri: vehcileUri ? vehcileUri?.uri : "https://png.pngtree.com/png-clipart/20210815/original/pngtree-delivery-boy-in-bike-out-for-png-image_6631607.jpg"
+                }} />
+            </View>
+            <View >
+                <TouchableOpacity
+                    onPress={onUpload}
+                    style={{
+                        width: "90%",
+                        marginHorizontal: "auto",
+                        borderColor: "#6D6D6D",
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        padding: 10,
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
+                        justifyContent: "center"
+                    }}>
                     <Entypo name="image" size={20} color="#FA4A0C" />
                     <Text style={{
                         fontFamily: "OpenSans-Regular",

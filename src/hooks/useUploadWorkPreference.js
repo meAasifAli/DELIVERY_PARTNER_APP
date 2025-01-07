@@ -5,9 +5,6 @@ import { useNavigation } from '@react-navigation/native'
 import { useSelector } from 'react-redux'
 import { Alert } from 'react-native'
 
-
-
-
 const useUploadWorkPreference = () => {
     const [loading, setLoading] = useState(false)
     const navigation = useNavigation()
@@ -25,7 +22,10 @@ const useUploadWorkPreference = () => {
             })
             if (res?.data) {
                 Alert.alert("Work Shift has been Submitted Successfully")
-                navigation.goBack()
+                setTimeout(() => navigation.reset({
+                    index: 0,
+                    routes: [{ name: "registration-complete" }]
+                }), 500)
             }
         } catch (error) {
             console.error("Error in uploading Work shiftings: ", error?.response)

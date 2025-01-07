@@ -4,6 +4,7 @@ import { BASEURL } from '../config/url'
 import { useNavigation } from '@react-navigation/native'
 import { useSelector } from 'react-redux'
 import { Alert } from 'react-native'
+import useGetDeliveryDocStatus from './useGetDeliveryDocStatus'
 
 
 
@@ -12,21 +13,20 @@ const useUploadPan = () => {
     const [loading, setLoading] = useState(false)
     const navigation = useNavigation()
     const { token } = useSelector((state) => state?.auth)
-    const handleUploadPan = async ({ pan_front,
-        pan_back, }) => {
+    const { handleGetDeliveryDocStatus } = useGetDeliveryDocStatus()
+    const handleUploadPan = async (data) => {
         try {
             setLoading(true)
-            const res = await axios.patch(`${BASEURL}/api/deliveryBoy/panUpdate`, {
-                pan_front,
-                pan_back,
-            }, {
+            const res = await axios.patch(`${BASEURL}/api/deliveryBoy/panUpdate`, data, {
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
                 }
             })
             if (res?.data) {
                 Alert.alert("PAN Card Has been Uploaded Successfully")
-                navigation.goBack()
+                await handleGetDeliveryDocStatus()
+                setTimeout(() => navigation.goBack(), 500)
             }
         } catch (error) {
             console.error("Error in uploading PAN ", error?.response?.data?.message)

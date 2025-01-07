@@ -17,20 +17,27 @@ const PersonalDocs = () => {
     return (
         <View style={styles.container}>
             <Header />
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={{ paddingHorizontal: 10, paddingVertical: 20 }}>
-                    <View>
-                        <Text style={{ color: "#000", fontFamily: "OpenSans-Medium", fontSize: 20, lineHeight: 27 }}>Pending Docs</Text>
-                    </View>
-                    <View style={{ marginTop: 20 }}>
-                        {
-                            pendingDocs?.map((item, id) => {
-                                return <PendingDoc key={id} title={item} href={item} />
-                            })
-                        }
-
-                    </View>
+            {
+                pendingDocs.length === 0 && <View style={{ justifyContent: "center", alignItems: "center", marginHorizontal: 10, marginTop: 20 }}>
+                    <Text style={{ color: "#000", fontFamily: "OpenSans-Regular", textAlign: "center", fontSize: 14 }}>You have Uploaded Delivery Documents, please wait for further Document Approval</Text>
                 </View>
+            }
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {
+                    pendingDocs?.length > 0 && <View style={{ paddingHorizontal: 10, paddingVertical: 20 }}>
+                        <View>
+                            <Text style={{ color: "#000", fontFamily: "OpenSans-Medium", fontSize: 20, lineHeight: 27 }}>Pending Docs</Text>
+                        </View>
+                        <View style={{ marginTop: 20 }}>
+                            {
+                                pendingDocs?.map((item, id) => {
+                                    return <PendingDoc key={id} title={item} href={item} />
+                                })
+                            }
+
+                        </View>
+                    </View>
+                }
                 <View style={{ paddingHorizontal: 10, paddingVertical: 30 }}>
                     <View>
                         <Text style={{ color: "#000", fontFamily: "OpenSans-Medium", fontSize: 20, lineHeight: 27 }}>Completed Docs</Text>
@@ -48,9 +55,6 @@ const PersonalDocs = () => {
                         </View>
                     </View>
                 </View>
-                <TouchableOpacity style={{ backgroundColor: "#FA4A0C", padding: 10, borderRadius: 10, marginBottom: 20, minHeight: 50, display: "flex", justifyContent: "center", alignItems: "center", marginHorizontal: 40 }}>
-                    <Text style={{ color: "white", fontFamily: "OpenSans-Bold", fontSize: 16, textAlign: "center" }}>Continue</Text>
-                </TouchableOpacity>
             </ScrollView>
 
         </View>
@@ -92,15 +96,16 @@ const PendingDoc = ({ title, href }) => {
     )
 }
 
-const CompletedDoc = ({ title }) => {
+const CompletedDoc = ({ title, href }) => {
+    const navigation = useNavigation()
     return (
-        <View style={{ backgroundColor: "#fff", padding: 10, borderColor: "#D6D6D6", borderWidth: 0.5, display: "flex", flexDirection: "row", alignItems: "center", borderRadius: 10, minHeight: 50, marginVertical: 5 }}>
+        <TouchableOpacity onPress={() => navigation.navigate(href)} style={{ backgroundColor: "#fff", padding: 10, borderColor: "#D6D6D6", borderWidth: 0.5, display: "flex", flexDirection: "row", alignItems: "center", borderRadius: 10, minHeight: 50, marginVertical: 5 }}>
             <View>
                 <Text style={{ fontFamily: "OpenSans-Regular", fontSize: 15, color: "#60B246" }}>{title}</Text>
             </View>
             <View style={{ flex: 1, alignItems: "flex-end" }}>
                 <MaterialIcons name='done' size={25} color={"#60B246"} />
             </View>
-        </View>
+        </TouchableOpacity>
     )
 }

@@ -4,8 +4,8 @@ const initialState = {
     token: null,
     isAuthenticated: false,
     phone: null,
-    otp: null
-
+    otp: null,
+    docVerified: "pending"
 }
 
 
@@ -24,10 +24,13 @@ const authSlice = createSlice({
         },
         setIsAuthenticated: (state, action) => {
             state.isAuthenticated = action.payload
+        },
+        setIsDocVerified: (state, action) => {
+            state.docVerified = action.payload
         }
     }
 })
 
-export const { setIsAuthenticated, setOtp, setPhone, setToken } = authSlice.actions
+export const { setIsAuthenticated, setOtp, setPhone, setToken, setIsDocVerified } = authSlice.actions
 
 export default authSlice.reducer

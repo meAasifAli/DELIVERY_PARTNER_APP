@@ -1,17 +1,18 @@
 import axios from 'axios'
 import { useState } from 'react'
-import { Alert, StyleSheet, } from 'react-native'
+import { Alert, } from 'react-native'
 import { BASEURL } from '../config/url'
 import { useNavigation } from '@react-navigation/native'
-import { useDispatch } from 'react-redux'
-import { setToken } from '../store/authSlice'
+import { useDispatch, } from 'react-redux'
+import { setIsAuthenticated, setIsDocVerified, setToken } from '../store/authSlice'
 
 
 const useVerifyOtp = () => {
     const dispatch = useDispatch()
     const [loading, setLoading] = useState(false)
-
     const navigation = useNavigation()
+
+
     const handleLogin = async (givenOTP, phone_no) => {
         try {
             setLoading(true)
@@ -19,8 +20,10 @@ const useVerifyOtp = () => {
                 givenOTP
             })
             if (res?.data) {
-                dispatch(setToken(res?.data?.token))
-                navigation.navigate("onboarding")
+                const { approved, token } = res?.data
+                dispatch(setToken(token))
+                dispatch(setIsDocVerified(approved))
+                approved === "pending" ? navigation.navigate("onboarding") : dispatch(setIsAuthenticated(true))
             }
         } catch (error) {
             Alert.alert("Error in authenticating user: ", error?.response?.data?.message)

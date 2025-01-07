@@ -1,12 +1,22 @@
 import { useNavigation } from '@react-navigation/native'
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { Image, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import AntDesign from 'react-native-vector-icons/AntDesign'
 import FA from "react-native-vector-icons/FontAwesome"
+import { useDispatch } from 'react-redux'
+import { setIsAuthenticated, setToken } from '../../store/authSlice'
 
 const Account = () => {
     const navigation = useNavigation()
+    const dispatch = useDispatch()
+    const handleSignout = () => {
+        dispatch(setToken(null))
+        dispatch(setIsAuthenticated(false))
+    }
     return (
         <View style={{ flex: 1, backgroundColor: "#fff", padding: 15 }}>
+            <TouchableOpacity onPress={handleSignout}>
+                <Text>Logout</Text>
+            </TouchableOpacity>
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={{ display: "flex", paddingTop: 20, flexDirection: "row", alignItems: "center", gap: 20 }}>
                     <View>
