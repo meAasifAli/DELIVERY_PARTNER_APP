@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useOrder } from '../../context/OrderContext';
 import { useNavigation } from '@react-navigation/native';
@@ -6,15 +6,21 @@ import IonIcons from 'react-native-vector-icons/Ionicons'
 import Entypo from 'react-native-vector-icons/Entypo'
 
 import SwipeButton from 'rn-swipe-button';
+import useAcceptOrder from '../../hooks/useAcceptOrder';
 
 const OrderRequest = () => {
+    const { handleAcceptOrder } = useAcceptOrder()
     const navigation = useNavigation()
-    const { newOrder, clearOrder, setIsNewOrder } = useOrder();
+    const { newOrder, clearOrder, } = useOrder();
     const [timeLeft, setTimeLeft] = useState(60);
+
+
+    console.log(newOrder);
+
 
     useEffect(() => {
         if (!newOrder) {
-            navigation.goBack(); // Close if no order
+            navigation.goBack();
             return;
         }
 
@@ -35,12 +41,10 @@ const OrderRequest = () => {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [newOrder, navigation, clearOrder]);
+    }, [newOrder, navigation, clearOrder, timeLeft]);
 
-    const handleAccept = () => {
-        clearOrder(); // Clear order when accepted
-        navigation.goBack();
-        setIsNewOrder(true)
+    const handleAccept = async () => {
+        await handleAcceptOrder(newOrder.orderDetails?.order_id)
     };
     const CheckoutButton = () => {
         return (
@@ -53,7 +57,7 @@ const OrderRequest = () => {
         );
     }
     return (
-        <View style={{ flex: 1, backgroundColor: "#202020", padding: "5%" }}>
+        <ScrollView style={{ flex: 1, backgroundColor: "#202020", padding: "5%" }}>
             <View style={{ marginHorizontal: "auto", marginVertical: 20, borderColor: "#FA4A0C", borderWidth: 7, borderRadius: 100 }}>
                 <Image source={require("../../assets/images/map.png")} style={{ borderRadius: 50, resizeMode: "contain" }} />
             </View>
@@ -90,7 +94,7 @@ const OrderRequest = () => {
                     <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 13, textTransform: "uppercase", lineHeight: 22 }}>5m Away</Text>
                 </View>
             </View>
-            <View style={{ flex: 1, justifyContent: "flex-end", padding: "5%" }}>
+            <View style={{ justifyContent: "flex-end", padding: "5%" }}>
                 <SwipeButton
                     containerStyles={{ borderRadius: 15 }}
                     height={50}
@@ -112,7 +116,7 @@ const OrderRequest = () => {
                     <Text style={{ color: "#fff", fontFamily: "OpenSans-Medium", fontSize: 20 }}>Accept Order</Text>
                 </TouchableOpacity> */}
             </View>
-        </View>
+        </ScrollView>
 
     )
 }

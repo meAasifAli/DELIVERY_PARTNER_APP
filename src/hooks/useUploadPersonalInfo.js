@@ -2,31 +2,33 @@ import axios from 'axios'
 import { useState } from 'react'
 import { BASEURL } from '../config/url'
 import { useNavigation } from '@react-navigation/native'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Alert } from 'react-native'
+import { getDocs } from '../store/docSlice'
 
 
 
 const useUploadPersonalInfo = () => {
+    const dispatch = useDispatch()
     const [loading, setLoading] = useState(false)
     const navigation = useNavigation()
     const { token } = useSelector((state) => state?.auth)
-    const handleUploadPersonal = async ({ first_name, last_name, gender, profile_pic }) => {
+    const handleUploadPersonal = async (data) => {
         try {
             setLoading(true)
-            const res = await axios.patch(`${BASEURL}/api/deliveryBoy/infoUpdate`, {
-                first_name, last_name, gender, profile_pic
-            }, {
+            const res = await axios.patch(`${BASEURL}/api/deliveryBoy/infoUpdate`, data, {
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data"
                 }
             })
             if (res?.data) {
                 Alert.alert("Peronsal Info Has been Added")
-                navigation.navigate("Delivery Documents")
+                dispatch(getDocs({ token }))
+                setTimeout(() => navigation.goBack(), 500);
             }
         } catch (error) {
-            console.error("Error in uploading personal info ", error?.response?.data?.message)
+            console.error("Error in uploading personal info ", error)
             // Alert.alert("Error in authenticating user: ", error?.response?.data?.message)
             setLoading(false)
         }

@@ -2,39 +2,34 @@ import axios from 'axios'
 import { useState } from 'react'
 import { BASEURL } from '../config/url'
 import { useNavigation } from '@react-navigation/native'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Alert } from 'react-native'
+import { getDocs } from '../store/docSlice'
 
 
 
 
 const useUploadVehicleDetails = () => {
+    const dispatch = useDispatch()
     const [loading, setLoading] = useState(false)
     const navigation = useNavigation()
     const { token } = useSelector((state) => state?.auth)
-    const handleUploadVehicleDetails = async ({
-        vehicle_no,
-        registration_no,
-        vehicle_type,
-        vehicle_image }) => {
+    const handleUploadVehicleDetails = async (data) => {
         try {
             setLoading(true)
-            const res = await axios.patch(`${BASEURL}/api/deliveryBoy/vehicleUpdate`, {
-                vehicle_no,
-                registration_no,
-                vehicle_type,
-                vehicle_image
-            }, {
+            const res = await axios.patch(`${BASEURL}/api/deliveryBoy/vehicleUpdate`, data, {
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data"
                 }
             })
             if (res?.data) {
                 Alert.alert("Vehicle Details Has been Uploaded Successfully")
-                navigation.goBack()
+                dispatch(getDocs({ token }))
+                setTimeout(() => navigation.goBack(), 500)
             }
         } catch (error) {
-            console.error("Error in uploading Vehicle Delivery Details", error?.response?.data?.message)
+            console.error("Error in uploading Vehicle Delivery Details", error?.response)
             // Alert.alert("Error in authenticating user: ", error?.response?.data?.message)
             setLoading(false)
         }

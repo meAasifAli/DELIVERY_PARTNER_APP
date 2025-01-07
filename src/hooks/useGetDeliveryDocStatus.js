@@ -1,7 +1,6 @@
 import axios from "axios"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { BASEURL } from "../config/url"
-import { useAuthStore } from "../store/useAuthStore"
 import { useSelector } from "react-redux"
 
 
@@ -29,7 +28,7 @@ const useGetDeliveryDocStatus = () => {
             }
         } catch (error) {
             setLoading(false)
-            console.error("Error in getting docs status: ", error?.response?.data?.message)
+            console.error("Error in getting docs status: ", error)
         }
         finally {
             setLoading(false)

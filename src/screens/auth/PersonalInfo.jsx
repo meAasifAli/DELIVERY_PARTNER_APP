@@ -1,4 +1,4 @@
-import { ActivityIndicator, Alert, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
+import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
 import AntDesign from 'react-native-vector-icons/AntDesign'
 import RadioButton from 'react-native-radio-button'
 import { useState } from 'react'
@@ -13,6 +13,7 @@ const PersonalInfo = () => {
     const { handleUploadPersonal, loading } = useUploadPersonalInfo()
     const [gender, setGender] = useState("male")
     const [imgUrl, setImgUrl] = useState("")
+    const [imgFile, setImgFile] = useState(null)
     const [inputs, setInputs] = useState({
         firstName: "",
         lastName: ""
@@ -28,7 +29,10 @@ const PersonalInfo = () => {
                 type: [types.images],
                 allowMultiSelection: false
             })
+            console.log(result);
+
             setImgUrl(result?.uri)
+            setImgFile(result)
 
         } catch (error) {
             console.log(error?.message);
@@ -37,13 +41,22 @@ const PersonalInfo = () => {
         }
     }
 
+
+
+
     const handlePersonalInfo = async () => {
-        await handleUploadPersonal({
-            first_name: inputs?.firstName,
-            last_name: inputs?.lastName,
-            gender: gender,
-            profile_pic: 'https://img.freepik.com/free-photo/hard-worker-courier-man-holding-box-talking-phone_23-2148419061.jpg'
-        })
+        const formData = new FormData()
+        formData.append("first_name", inputs.firstName)
+        formData.append("last_name", inputs.lastName)
+        formData.append("gender", gender)
+        if (imgFile) {
+            formData.append("profile_pic", {
+                uri: imgFile.uri,
+                name: imgFile.name,
+                type: imgFile.type
+            })
+        }
+        await handleUploadPersonal(formData)
     }
     return (
         <View style={styles.container}>

@@ -13,7 +13,7 @@ const useApproveDocs = () => {
     const handleAuthUser = async () => {
         try {
             setLoading(true)
-            const res = await axios.patch(`${BASEURL}/api/deliveryBoy/sendForApproval`, {
+            const res = await axios.patch(`${BASEURL}/api/deliveryBoy/sendForApproval`, {}, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -23,7 +23,8 @@ const useApproveDocs = () => {
                 dispatch(setIsAuthenticated(true))
             }
         } catch (error) {
-            console.error("Error in authenticating user: ", error?.response)
+            Alert.alert("Error in sending documents for approval: ", error?.response?.data?.message)
+            console.error("Error in authenticating user: ", error?.response?.data?.message)
             // Alert.alert("Error in authenticating user: ", error?.response?.data?.message)
             setLoading(false)
         }

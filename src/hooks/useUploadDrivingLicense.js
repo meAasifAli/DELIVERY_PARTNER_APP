@@ -4,6 +4,7 @@ import { BASEURL } from '../config/url'
 import { useNavigation } from '@react-navigation/native'
 import { useSelector } from 'react-redux'
 import { Alert } from 'react-native'
+import useGetDeliveryDocStatus from './useGetDeliveryDocStatus'
 
 
 
@@ -12,24 +13,23 @@ const useUploadDrivingLicense = () => {
     const [loading, setLoading] = useState(false)
     const navigation = useNavigation()
     const { token } = useSelector((state) => state?.auth)
-    const handleUploadDL = async ({ dl_front,
-        dl_back, }) => {
+    const { handleGetDeliveryDocStatus } = useGetDeliveryDocStatus()
+    const handleUploadDL = async (data) => {
         try {
             setLoading(true)
-            const res = await axios.patch(`${BASEURL}/api/deliveryBoy/dlUpdate`, {
-                dl_front,
-                dl_back,
-            }, {
+            const res = await axios.patch(`${BASEURL}/api/deliveryBoy/dlUpdate`, data, {
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data"
                 }
             })
             if (res?.data) {
-                Alert.alert("Adhar Card Has been Uploaded Successfully")
-                navigation.goBack()
+                Alert.alert("Driving License Has been Uploaded Successfully")
+                await handleGetDeliveryDocStatus()
+                setTimeout(() => navigation.goBack(), 500)
             }
         } catch (error) {
-            console.error("Error in uploading DL ", error?.response?.data?.message)
+            console.error("Error in uploading DL ", error)
             // Alert.alert("Error in authenticating user: ", error?.response?.data?.message)
             setLoading(false)
         }

@@ -1,25 +1,55 @@
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import AntDesign from 'react-native-vector-icons/AntDesign'
 import { useNavigation } from '@react-navigation/native'
 import Entypo from 'react-native-vector-icons/Entypo'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
+import DocumentPicker, { types } from 'react-native-document-picker'
 import { useState } from 'react'
-import ReactNativeModal from 'react-native-modal'
 import useUploadDrivingLicense from '../../hooks/useUploadDrivingLicense'
-import useGetDeliveryDocStatus from '../../hooks/useGetDeliveryDocStatus'
+
 
 const UploadDrivingLicense = () => {
-    const [isOpen, setIsOpen] = useState(false)
-    const navigation = useNavigation()
-    const { handleUploadDL } = useUploadDrivingLicense()
-    const { handleGetDeliveryDocStatus } = useGetDeliveryDocStatus()
+
+    const [dlUri, setDlUri] = useState([])
+
+
+    const { handleUploadDL, loading } = useUploadDrivingLicense()
+
+    const onUploadDL = async () => {
+        try {
+            const result = await DocumentPicker.pickSingle({
+                type: [types.images],
+                allowMultiSelection: true
+            })
+            setDlUri([...dlUri, result])
+        } catch (error) {
+            Alert.alert("Error in uploading Adhar: ", error?.message)
+        }
+    }
+
+    // console.log(adharUri);
+
+    const handleRemoveCard = (id) => {
+        setDlUri(dlUri.filter((item, index) => index !== id))
+    }
+
     const handleUpload = async () => {
-        await handleUploadDL({
-            "dl_front": "https://example.com/dl_front.jpg",
-            "dl_back": "https://example.com/dl_back.jpg"
-        })
-        await handleGetDeliveryDocStatus()
-        setIsOpen((prev) => !prev)
+        const formData = new FormData()
+        if (dlUri) {
+            const front = dlUri[0]
+            const back = dlUri[1]
+            formData.append("dl_front", {
+                uri: front.uri,
+                type: front.type,
+                name: front.name
+            })
+            formData.append("dl_back", {
+                uri: back.uri,
+                type: back.type,
+                name: back.name
+            })
+        }
+        await handleUploadDL(formData)
     }
     return (
         <View style={styles.container}>
@@ -41,36 +71,19 @@ const UploadDrivingLicense = () => {
                         below for quicker verification.
                     </Text>
                 </View>
-                <LicenseUpload />
-                <UploadedLicense />
+                <DlUpload handleUploadAdhar={onUploadDL} />
+                <View>
+                    {
+                        dlUri?.map((item, id) => (
+                            <UploadedDLCards handleRemoveCard={handleRemoveCard} id={id} adharUri={item?.uri} key={id} />
+                        ))
+                    }
+                </View>
                 <TouchableOpacity onPress={handleUpload} style={{ marginVertical: "10%", backgroundColor: "#FA4A0C", borderRadius: 10, height: 50, display: "flex", justifyContent: "center", alignItems: "center", width: "80%", marginHorizontal: "auto" }}>
-                    <Text style={{ color: "#fff", fontSize: 16, fontFamily: "OpenSans-Medium", textAlign: "center", }}>Submit</Text>
+                    {
+                        loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: "#fff", fontSize: 16, fontFamily: "OpenSans-Bold" }}>Upload</Text>
+                    }
                 </TouchableOpacity>
-                <ReactNativeModal
-                    isVisible={isOpen}
-                    onBackdropPress={() => setIsOpen(pre => !pre)}
-                    style={{ flex: 1 }}
-                    animationIn={"bounceInUp"}
-                    animationInTiming={1000}
-                    animationOut={"bounceOutDown"}
-                    animationOutTiming={1000}
-                >
-                    <View style={{ backgroundColor: "#fff", height: 200, width: "90%", marginHorizontal: "auto", borderRadius: 20, padding: "5%" }}>
-                        <Text
-                            style={{
-                                fontFamily: "OpenSans-Regular",
-                                fontSize: 14,
-                            }}
-                        >
-                            Thank You for submiting documents we
-                            will review the uploaded documents and
-                            revert back to you soon!
-                        </Text>
-                        <TouchableOpacity onPress={() => navigation.navigate("registration-complete")} style={{ marginVertical: "15%", backgroundColor: "#FA4A0C", borderRadius: 10, height: 50, display: "flex", justifyContent: "center", alignItems: "center", width: "50%", marginHorizontal: "auto" }}>
-                            <Text style={{ color: "#fff", fontSize: 16, fontFamily: "OpenSans-Medium", textAlign: "center", }}>Submit</Text>
-                        </TouchableOpacity>
-                    </View>
-                </ReactNativeModal>
             </ScrollView>
         </View>
     )
@@ -93,13 +106,13 @@ const Header = () => {
                 <AntDesign name="arrowleft" color="#fff" size={20} />
             </TouchableOpacity>
             <View >
-                <Text style={{ color: "#fff", fontSize: 20, fontFamily: "OpenSans-Regular", textAlign: "center" }}>Upload Personal Documents</Text>
+                <Text style={{ color: "#fff", fontSize: 18, fontFamily: "OpenSans-Bold", textAlign: "center" }}>Upload Your Adhar</Text>
             </View>
         </View>
     )
 }
 
-const LicenseUpload = () => {
+const DlUpload = ({ handleUploadAdhar }) => {
     return (
         <View style={{ marginTop: "10%", padding: "5%", width: "90%", marginHorizontal: "auto", borderStyle: "dashed", borderColor: "#6D6D6D", borderWidth: 1, borderRadius: 10 }}>
             <View>
@@ -109,11 +122,11 @@ const LicenseUpload = () => {
                         fontSize: 16
                     }}
                 >Your name and photo Should be clearly
-                    visible on the front of your Driving License.
+                    visible on the front of your Aadhar card.
                 </Text>
             </View>
             <View style={{ marginTop: "40%" }}>
-                <TouchableOpacity style={{
+                <TouchableOpacity onPress={handleUploadAdhar} style={{
                     width: "90%",
                     marginHorizontal: "auto",
                     borderColor: "#6D6D6D",
@@ -138,46 +151,50 @@ const LicenseUpload = () => {
     )
 }
 
-const UploadedLicense = () => {
+const UploadedDLCards = ({ adharUri, id, handleRemoveCard }) => {
+
     return (
         <View style={{ marginTop: "10%", padding: "5%", width: "90%", marginHorizontal: "auto", borderStyle: "dashed", borderColor: "#6D6D6D", borderWidth: 1, borderRadius: 10 }}>
             <View>
                 <Text
                     style={{
-                        fontFamily: "OpenSans-Regular",
+                        fontFamily: "OpenSans-Medium",
                         fontSize: 16,
                         textAlign: "center"
                     }}
                 >
-                    Upload Back-Side photo and details
-                    should be clearly Visible.
+                    {
+                        id === 0 ? "Driving License Front" : "Driving License Back"
+                    }
                 </Text>
             </View>
             {/* adhar card */}
             <View style={{ marginVertical: 20, width: "70%", marginHorizontal: "auto", borderStyle: "dashed", borderWidth: 1, borderColor: "#969AA4", borderRadius: 10 }}>
                 <Image style={{ width: "100%", objectFit: "contain", height: 150 }} source={{
-                    uri: "https://cdn.pixabay.com/photo/2022/11/09/00/44/aadhaar-card-7579588_640.png"
+                    uri: adharUri ? adharUri : "https://cdn.pixabay.com/photo/2022/11/09/00/44/aadhaar-card-7579588_640.png"
                 }} />
             </View>
             <View style={{}}>
-                <TouchableOpacity style={{
-                    width: "90%",
-                    marginHorizontal: "auto",
-                    borderColor: "#6D6D6D",
-                    borderWidth: 1,
-                    borderRadius: 10,
-                    padding: 10,
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                    justifyContent: "center"
-                }}>
+                <TouchableOpacity
+                    onPress={() => handleRemoveCard(id)}
+                    style={{
+                        width: "90%",
+                        marginHorizontal: "auto",
+                        borderColor: "#6D6D6D",
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        padding: 10,
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
+                        justifyContent: "center"
+                    }}>
                     <MaterialIcons name="clear" size={20} color="#FA4A0C" />
                     <Text style={{
                         fontFamily: "OpenSans-Regular",
                         fontSize: 16,
-                        color: "#FA4A0C",
+                        color: "#FA4A0C"
                     }}>Uploaded</Text>
                 </TouchableOpacity>
             </View>

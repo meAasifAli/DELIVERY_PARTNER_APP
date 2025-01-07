@@ -6,21 +6,22 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import DocumentPicker, { types } from 'react-native-document-picker'
 import { useState } from 'react'
 import useUploadAdhar from '../../hooks/useUploadAdhar'
-import useGetDeliveryDocStatus from '../../hooks/useGetDeliveryDocStatus'
+
 
 const UploadAdhar = () => {
 
-    const [adharUri, setAdharUri] = useState("")
+    const [adharUri, setAdharUri] = useState([])
+
 
     const { handleUploadAdhar, loading } = useUploadAdhar()
-    const { handleGetDeliveryDocStatus } = useGetDeliveryDocStatus()
+
     const onUploadAdhar = async () => {
         try {
             const result = await DocumentPicker.pickSingle({
                 type: [types.images],
-                allowMultiSelection: false
+                allowMultiSelection: true
             })
-            setAdharUri(result.uri)
+            setAdharUri([...adharUri, result])
         } catch (error) {
             Alert.alert("Error in uploading Adhar: ", error?.message)
         }
@@ -28,9 +29,27 @@ const UploadAdhar = () => {
 
     // console.log(adharUri);
 
+    const handleRemoveCard = (id) => {
+        setAdharUri(adharUri.filter((item, index) => index !== id))
+    }
+
     const handleUpload = async () => {
-        await handleUploadAdhar({ adhar_front: "https://example.com/adhar_front.jpg", adhar_back: "https://example.com/adhar_back.jpg" })
-        await handleGetDeliveryDocStatus()
+        const formData = new FormData()
+        if (adharUri) {
+            const front = adharUri[0]
+            const back = adharUri[1]
+            formData.append("adhar_front", {
+                uri: front.uri,
+                type: front.type,
+                name: front.name
+            })
+            formData.append("adhar_back", {
+                uri: back.uri,
+                type: back.type,
+                name: back.name
+            })
+        }
+        await handleUploadAdhar(formData)
     }
     return (
         <View style={styles.container}>
@@ -53,7 +72,13 @@ const UploadAdhar = () => {
                     </Text>
                 </View>
                 <AdharUpload handleUploadAdhar={onUploadAdhar} />
-                <UploadedAdharCards adharUri={adharUri} />
+                <View>
+                    {
+                        adharUri?.map((item, id) => (
+                            <UploadedAdharCards handleRemoveCard={handleRemoveCard} id={id} adharUri={item?.uri} key={id} />
+                        ))
+                    }
+                </View>
                 <TouchableOpacity onPress={handleUpload} style={{ marginVertical: "10%", backgroundColor: "#FA4A0C", borderRadius: 10, height: 50, display: "flex", justifyContent: "center", alignItems: "center", width: "80%", marginHorizontal: "auto" }}>
                     <Text style={{ color: "#fff", fontSize: 16, fontFamily: "OpenSans-Medium", textAlign: "center", }}>Submit</Text>
                 </TouchableOpacity>
@@ -124,19 +149,21 @@ const AdharUpload = ({ handleUploadAdhar }) => {
     )
 }
 
-const UploadedAdharCards = ({ adharUri }) => {
+const UploadedAdharCards = ({ adharUri, id, handleRemoveCard }) => {
+
     return (
         <View style={{ marginTop: "10%", padding: "5%", width: "90%", marginHorizontal: "auto", borderStyle: "dashed", borderColor: "#6D6D6D", borderWidth: 1, borderRadius: 10 }}>
             <View>
                 <Text
                     style={{
-                        fontFamily: "OpenSans-Regular",
+                        fontFamily: "OpenSans-Medium",
                         fontSize: 16,
                         textAlign: "center"
                     }}
                 >
-                    Upload Back-Side photo and details
-                    should be clearly Visible.
+                    {
+                        id === 0 ? "Adhar Card Front" : "Adhar Card Back"
+                    }
                 </Text>
             </View>
             {/* adhar card */}
@@ -146,19 +173,21 @@ const UploadedAdharCards = ({ adharUri }) => {
                 }} />
             </View>
             <View style={{}}>
-                <TouchableOpacity style={{
-                    width: "90%",
-                    marginHorizontal: "auto",
-                    borderColor: "#6D6D6D",
-                    borderWidth: 1,
-                    borderRadius: 10,
-                    padding: 10,
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                    justifyContent: "center"
-                }}>
+                <TouchableOpacity
+                    onPress={() => handleRemoveCard(id)}
+                    style={{
+                        width: "90%",
+                        marginHorizontal: "auto",
+                        borderColor: "#6D6D6D",
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        padding: 10,
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
+                        justifyContent: "center"
+                    }}>
                     <MaterialIcons name="clear" size={20} color="#FA4A0C" />
                     <Text style={{
                         fontFamily: "OpenSans-Regular",
