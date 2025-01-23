@@ -14,6 +14,8 @@ const Otp = () => {
     const { phone, otp } = useSelector((state) => state?.auth)
     console.log(otp);
 
+    console.log(phone);
+
     const handleLoginUser = async () => {
         if (!inputOtp) {
             alert("Please enter OTP")
@@ -32,17 +34,18 @@ const Otp = () => {
             <View
                 style={styles.bottomContainer}>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                    <Text style={{ color: "#fff", fontSize: 36, fontFamily: "OpenSans-Bold", lineHeight: 54, textAlign: "center", paddingVertical: "2%" }}>Verify OTP</Text>
+                    <Text style={{ color: "#fff", fontSize: 24, fontFamily: "OpenSans-Bold", lineHeight: 54, textAlign: "center", paddingVertical: "2%" }}>Verify OTP</Text>
                     <View
                         style={{
                             maxWidth: "70%",
                             marginHorizontal: "auto"
                         }}
                     >
-                        <Text style={{ textAlign: "center", color: "#fff", fontSize: 20, fontFamily: "OpenSans-Regular", lineHeight: 27 }}>OTP sent!</Text>
-                        <Text style={{ textAlign: "center", color: "#fff", fontSize: 20, fontFamily: "OpenSans-Regular", lineHeight: 27 }}>Secure your taste journey,
+                        <Text style={{ textAlign: "center", color: "#fff", fontSize: 16, fontFamily: "OpenSans-Regular", lineHeight: 21 }}>OTP sent!</Text>
+                        <Text style={{ textAlign: "center", color: "#fff", fontSize: 16, fontFamily: "OpenSans-Regular", lineHeight: 21, letterSpacing: 1 }}>Secure your taste journey,
                             one code at a time!</Text>
                     </View>
+                    <Text style={{ color: "#fff", fontSize: 16, fontFamily: "OpenSans-Regular", lineHeight: 21, textAlign: "center", marginTop: "2%" }}>{otp}</Text>
                     <View style={styles.otpWrapper}>
                         <OtpInput
                             focusColor={"#fff"} theme={{
@@ -76,14 +79,15 @@ const styles = StyleSheet.create({
         flex: 1,
         position: "absolute",
         bottom: 0,
-        height: "55%",
+        // height: "55%",
         width: "100%",
         backgroundColor: "#202020",
         borderTopEndRadius: 25,
         borderTopStartRadius: 25,
         display: "flex",
         justifyContent: "center",
-        alignItems: "center"
+        alignItems: "center",
+        paddingVertical: 20
     },
     otpWrapper: {
         paddingHorizontal: 20,

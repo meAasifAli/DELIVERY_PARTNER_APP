@@ -6,13 +6,14 @@ let socket;
 export const initialiseSocket = (token) => {
     socket = io(BASEURL, {
         transports: ["websocket"],
-        reconnection: true,
-        reconnectionAttempts: 5,
-        timeout: 10000,
         query: {
             token
         }
     })
+
+    socket.on("connect_error", (err) => {
+        console.error("Socket connection error:", err.message);
+    });
     return socket
 }
 
