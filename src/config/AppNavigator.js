@@ -2,10 +2,10 @@ import { NavigationContainer } from '@react-navigation/native'
 import { useDispatch, useSelector } from 'react-redux'
 import AuthenticatedUserStack from './AuthenticatedUserStack'
 import UnAuthenticatedUserStack from './UnAuthenticatedUserStack'
-import Geolocation from '@react-native-community/geolocation'
+import Geolocation from '../config/location'
 import { useEffect } from 'react'
 import { setLocation } from '../store/locationSlice'
-import { PERMISSIONS, RESULTS, check } from 'react-native-permissions'
+import { PERMISSIONS, RESULTS, check, request } from 'react-native-permissions'
 const AppNavigator = () => {
     const dispatch = useDispatch()
     const { isAuthenticated, docVerified } = useSelector((state) => state.auth)
@@ -43,7 +43,7 @@ const AppNavigator = () => {
                 }
             }
         } catch (error) {
-            console.error('Error checking location permission:', error);
+            console.error('Error checking location permission:', error?.message);
         }
     };
 

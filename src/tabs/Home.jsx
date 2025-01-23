@@ -1,130 +1,153 @@
-import { Alert, Dimensions, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Alert, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useRef, useState, } from 'react'
-import MapView, { Marker, Polyline, } from 'react-native-maps'
+import MapView, { Marker, } from 'react-native-maps'
 const { height } = Dimensions.get("window")
 import IonIcons from 'react-native-vector-icons/Ionicons'
 import { useOrder } from '../context/OrderContext'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import Status from '../components/Status'
 import { initialiseSocket } from '../config/socket'
-import polyline from '@mapbox/polyline'
 import useConfirmOrder from '../hooks/useConfirmOrder'
 import useArriveOrder from '../hooks/useArriveorder'
 import useDeliverOrder from '../hooks/useDeliverOrder'
+import MapViewDirections from 'react-native-maps-directions'
+import { API_KEY } from '../config/url'
+import Geolocation from '../config/location'
+import { setLocation } from '../store/locationSlice'
+import { getDistance } from 'geolib'
 
 
 
 
 
 const Home = () => {
+
     const mapRef = useRef(null);
     const { startLocation } = useSelector((state) => state.location)
-    const [routeCoordinates, setRouteCoordinates] = useState([]);
-    const { isNewOrder, placeOrder, newOrder, clearOrder, isOnline } = useOrder()
+    const { isNewOrder, placeOrder, newOrder, isOnline } = useOrder()
     const { token } = useSelector((state) => state?.auth)
+    const [isAtResturant, setIsAtResturant] = useState(false)
 
     // console.log(startLocation);
 
+
+
     const startLat = startLocation?.latitude
     const startLon = startLocation?.longitude
-    const destLat = parseFloat(newOrder?.orderDetails?.latitude);
-    const destLon = parseFloat(newOrder?.orderDetails?.longitude);
+    const restaurantLat = parseFloat(newOrder?.orderDetails?.restaurant_latitude);
+    const restaurantLon = parseFloat(newOrder?.orderDetails?.restaurant_longitude);
+    const userLat = parseFloat(newOrder?.orderDetails?.user_latitude);
+    const userLon = parseFloat(newOrder?.orderDetails?.user_longitude);
 
-    console.log(newOrder);
+    // console.log(newOrder);
 
 
-    useEffect(() => {
 
-        if (isNewOrder && mapRef.current) {
-            // Define the region to animate to
-            const targetRegion = {
-                latitude: 34.074744,
-                longitude: 74.820444,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-            };
-
-            // Animate the map to the region
-            mapRef.current.animateToRegion(targetRegion, 1000);
-        }
-    }, [isNewOrder])
 
 
     useEffect(() => {
-        const socket = initialiseSocket(token)
+        if (!isOnline) return;
+
+        // Initialize the socket
+        const socket = initialiseSocket(token);
 
         socket.on("connect", () => {
             console.log("Delivery Boy Connected");
-            if (isOnline) {
-                socket.emit("deliveryBoyConnect", {
+
+            socket.emit("deliveryBoyConnect", {
+                location: {
+                    lat: startLocation?.latitude,
+                    lng: startLocation?.longitude,
+                },
+                status: "online",
+            });
+
+
+
+            if (newOrder) {
+                const updatedLocation = getUpdatedLocation();
+                socket.emit("updateDeliveryBoyLocation", {
                     location: {
-                        lat: 34.074744,
-                        lng: 74.820444
-                        // lat: startLat ? startLat : 51.511076,
-                        // lng: startLon ? startLon : -0.122156,
+                        lat: updatedLocation?.latitude,
+                        lng: updatedLocation?.longitude,
                     },
-                    status: "online"
-                })
+                    order_id: newOrder?.orderDetails?.order_id,
+                });
+                return () => {
+                    Geolocation.clearWatch(updatedLocation);
+                }
             }
 
 
-            socket.emit("updateDeliveryBoyLocation", {
-                location: { lat: 34.074744, lng: 74.820444 },
-                order_id: newOrder?.orderDetails?.order_id,
-            });
-
-        })
-
-
-
+        });
 
         socket.on("newOrderNotification", (data) => {
-            placeOrder(data)
-        })
+            placeOrder(data);
+        });
 
         socket.on("disconnect", (reason) => {
             console.log("Delivery Boy disconnected", reason);
-        })
+        });
 
-
-
+        // Cleanup function
         return () => {
-            socket.off('connect');
-            socket.off('disconnect');
-            socket.off('newOrderNotification');
-            socket.off("updateDeliveryBoyLocation")
-            socket.disconnect()
-            // clearInterval(intervalId); // Clear the interval
+            socket.off("connect");
+            socket.off("disconnect");
+            socket.off("newOrderNotification");
+            socket.disconnect();
         };
-    }, [isOnline])
+    }, [isOnline, token, startLocation, newOrder]);
 
 
-    useEffect(() => {
-        const key = "pk.8f2a73d9ff72a2b8a7fc9626d06d6e12";
-        const fetchRoute = async () => {
-            const response = await fetch(
-                `https://us1.locationiq.com/v1/directions/driving/74.820444,34.074744;74.8250,34.0694?key=${key}&steps=true&alternatives=true&geometries=polyline&overview=full`
-            );
-            const data = await response.json();
+    const dispatch = useDispatch()
 
-            // console.log(data);
-            if (response.ok) {
-                // Decode polyline geometry
-                const geometry = data.routes[0].geometry;
-                const decodedCoordinates = polyline.decode(geometry).map(([latitude, longitude]) => ({
-                    latitude,
-                    longitude,
+
+    const getUpdatedLocation = () => {
+        const watchId = Geolocation.watchPosition(
+            (position) => {
+                const location = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                };
+
+                // Update Redux state
+                dispatch(setLocation({
+                    latitude: location.lat,
+                    longitude: location.lng,
                 }));
 
-                setRouteCoordinates(decodedCoordinates);
-            } else {
-                console.error("Error fetching route:", data);
+                // Check if the delivery boy is at the restaurant (within 100 meters)
+                const distance = getDistance(
+                    { latitude: location.lat, longitude: location.lng },
+                    { latitude: restaurantLat, longitude: restaurantLon }
+                );
+
+                console.log("Distance to Restaurant:", distance);
+
+                if (distance <= 1500) {
+                    setIsAtResturant(true);
+                } else {
+                    setIsAtResturant(false);
+                }
+            },
+            (error) => {
+                console.error("Error fetching location:", error);
+            },
+            {
+                enableHighAccuracy: true,
+                distanceFilter: 10, // Trigger update every 10 meters
             }
-        };
-        if (newOrder) {
-            fetchRoute();
-        }
-    }, [newOrder]);
+        );
+
+        return watchId;
+    };
+
+
+
+
+
+
+
 
 
 
@@ -140,15 +163,11 @@ const Home = () => {
             </View >
             <MapView
                 ref={mapRef}
-                showsScale
                 style={{ flex: 1 }}
                 provider={'google'}
-                showsUserLocation={true}
-                followsUserLocation
-                showsMyLocationButton
                 initialRegion={{
-                    latitude: 34.074744,
-                    longitude: 74.820444,
+                    latitude: startLat,
+                    longitude: startLon,
                     latitudeDelta: 0.0922,
                     longitudeDelta: 0.0421,
                 }}
@@ -157,39 +176,69 @@ const Home = () => {
 
                 <Marker
                     coordinate={{
-                        latitude: 34.074744,
-                        longitude: 74.820444,
+                        latitude: startLat,
+                        longitude: startLon,
                     }}
                     title="Delivery Boy Start Location"
                 />
 
 
+                {
+                    restaurantLat && restaurantLon && <Marker
+                        coordinate={{
+                            latitude: restaurantLat,
+                            longitude: restaurantLon,
+                        }}
+                        title="Restaurant Location"
+                    />
+                }
 
 
 
-                {newOrder?.orderDetails?.latitude != null && newOrder?.orderDetails?.longitude != null && (
+
+
+                {userLat && userLon && (
                     <Marker
                         coordinate={{
-                            latitude: 34.0694,
-                            longitude: 74.8250
+                            latitude: userLat,
+                            longitude: userLon
                         }}
                         title="User Last Location"
                     />
                 )}
 
-                {/* Draw the Polyline */}
-                {routeCoordinates.length > 0 && newOrder && (
-                    <Polyline
-                        coordinates={routeCoordinates}
-                        strokeColor="#0000FF" // Blue
-                        strokeWidth={8}
-                        style={{ flex: 1, zIndex: 100 }}
+                {
+                    newOrder && <MapViewDirections
+                        strokeWidth={10}
+                        origin={{
+                            latitude: startLat,
+                            longitude: startLon,
+                        }}
+                        destination={{
+                            latitude: userLat,
+                            longitude: userLon
+                        }}
+                        apikey={API_KEY}
+                        onReady={(result) => {
+                            if (mapRef.current) {
+                                mapRef.current.fitToCoordinates(result.coordinates, {
+                                    edgePadding: {
+                                        top: 50,
+                                        right: 50,
+                                        bottom: 50,
+                                        left: 50,
+                                    },
+                                    animated: true,
+
+                                });
+                            }
+                        }}
                     />
-                )}
+                }
             </MapView>
 
             {
-                isNewOrder && <BottomPopup />
+                isNewOrder && <BottomPopup isAtResturant={isAtResturant} />
             }
         </View>
     )
@@ -206,12 +255,17 @@ const styles = StyleSheet.create({
 })
 
 
-const BottomPopup = () => {
+const BottomPopup = ({ isAtResturant }) => {
+
     const [btnStatus, setBtnStatus] = useState("confirmed")
     const { handleConfirmOrder, loading } = useConfirmOrder()
     const { handleArrivedOrder } = useArriveOrder()
     const { handleDeliverOrder } = useDeliverOrder()
     const { newOrder, clearOrder } = useOrder()
+
+
+
+
 
 
     const handleArrived = async () => {
@@ -253,7 +307,7 @@ const BottomPopup = () => {
                     </TouchableOpacity>
                 }
                 {
-                    btnStatus === 'confirmed' && <TouchableOpacity onPress={handleConfirm} style={{ backgroundColor: "#FA4A0C", height: 40, display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 25, marginTop: 10 }}>
+                    btnStatus === "confirmed" && <TouchableOpacity onPress={handleConfirm} style={{ backgroundColor: "#FA4A0C", height: 40, display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 25, marginTop: 10 }}>
                         <Text style={{ color: "#fff", fontFamily: "OpenSans-Medium", fontSize: 12 }}>Confirm Order</Text>
                     </TouchableOpacity>
                 }
