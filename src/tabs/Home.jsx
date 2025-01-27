@@ -14,7 +14,9 @@ import MapViewDirections from 'react-native-maps-directions'
 import { API_KEY } from '../config/url'
 import Geolocation from '../config/location'
 import { setLocation } from '../store/locationSlice'
-import { getDistance } from 'geolib'
+import haversineDistance from 'haversine-distance'
+
+
 
 
 
@@ -24,11 +26,19 @@ const Home = () => {
 
     const mapRef = useRef(null);
     const { startLocation } = useSelector((state) => state.location)
-    const { isNewOrder, placeOrder, newOrder, isOnline } = useOrder()
+    const { isNewOrder, placeOrder, newOrder, isOnline, deliveryStatus, setDeliveryStatus } = useOrder()
     const { token } = useSelector((state) => state?.auth)
     const [isAtResturant, setIsAtResturant] = useState(false)
+    const socket = initialiseSocket(token);
+    const [btnStatus, setBtnStatus] = useState("confirmed")
+    const [isconfirmed, setIsConfirmed] = useState(false);
+    const { handleConfirmOrder, loading } = useConfirmOrder()
+    const { handleArrivedOrder } = useArriveOrder()
+    const { handleDeliverOrder } = useDeliverOrder()
+    const [isArrived, setIsArrived] = useState(false)
 
-    // console.log(startLocation);
+
+    // console.log("startLocation: ", startLocation);
 
 
 
@@ -48,37 +58,30 @@ const Home = () => {
     useEffect(() => {
         if (!isOnline) return;
 
-        // Initialize the socket
-        const socket = initialiseSocket(token);
 
         socket.on("connect", () => {
             console.log("Delivery Boy Connected");
 
             socket.emit("deliveryBoyConnect", {
                 location: {
-                    lat: startLocation?.latitude,
-                    lng: startLocation?.longitude,
+                    lat: startLat,
+                    lng: startLon,
                 },
                 status: "online",
             });
 
 
 
-            if (newOrder) {
-                const updatedLocation = getUpdatedLocation();
+
+            if (newOrder && isconfirmed) {
                 socket.emit("updateDeliveryBoyLocation", {
                     location: {
-                        lat: updatedLocation?.latitude,
-                        lng: updatedLocation?.longitude,
+                        lat: startLat,
+                        lng: startLon,
                     },
                     order_id: newOrder?.orderDetails?.order_id,
                 });
-                return () => {
-                    Geolocation.clearWatch(updatedLocation);
-                }
             }
-
-
         });
 
         socket.on("newOrderNotification", (data) => {
@@ -89,14 +92,20 @@ const Home = () => {
             console.log("Delivery Boy disconnected", reason);
         });
 
+        const watchId = getUpdatedLocation();
         // Cleanup function
         return () => {
             socket.off("connect");
             socket.off("disconnect");
+            socket.off("deliveryBoyConnect")
             socket.off("newOrderNotification");
+            socket.off("updateDeliveryBoyLocation")
             socket.disconnect();
+            if (watchId) {
+                Geolocation.clearWatch(watchId);
+            }
         };
-    }, [isOnline, token, startLocation, newOrder]);
+    }, [isOnline, token, startLat, startLon, newOrder, isconfirmed]);
 
 
     const dispatch = useDispatch()
@@ -116,18 +125,37 @@ const Home = () => {
                     longitude: location.lng,
                 }));
 
-                // Check if the delivery boy is at the restaurant (within 100 meters)
-                const distance = getDistance(
+                // if (newOrder?.orderDetails?.order_id) {
+                //     socket.emit("updateDeliveryLocation", {
+                //         location,
+                //         order_id: newOrder.orderDetails.order_id,
+                //     });
+                // }
+
+                // // Check if the delivery boy is at the restaurant (within 100 meters)
+                const distanceToRestaurant = haversineDistance(
                     { latitude: location.lat, longitude: location.lng },
                     { latitude: restaurantLat, longitude: restaurantLon }
                 );
 
-                console.log("Distance to Restaurant:", distance);
+                const distanceToUser = haversineDistance({ latitude: location.lat, longitude: location.lng },
+                    { latitude: userLat, longitude: userLon })
 
-                if (distance <= 1500) {
+                console.log("Distance to Restaurant:", distanceToRestaurant);
+                console.log("Distance to User: ", distanceToUser);
+
+
+                if (distanceToRestaurant <= 100) {
                     setIsAtResturant(true);
                 } else {
                     setIsAtResturant(false);
+                }
+
+                if (distanceToUser <= 100) {
+                    setIsArrived(true)
+                }
+                else {
+                    setIsArrived(false)
                 }
             },
             (error) => {
@@ -143,14 +171,33 @@ const Home = () => {
     };
 
 
+    const handleArrived = async () => {
+        setBtnStatus("delivered")
+        await handleArrivedOrder(newOrder?.orderDetails?.order_id)
+    }
+
+    const handleConfirm = async () => {
+        setBtnStatus("arrived");
+        setIsConfirmed(pre => !pre)
+
+        if (!newOrder || !newOrder.orderDetails || !newOrder.orderDetails.order_id) {
+            console.error("No order details available for confirmation");
+            return;
+        }
+        try {
+            await handleConfirmOrder(newOrder?.orderDetails?.order_id);
+            console.log("Order confirmed successfully");
+        } catch (error) {
+            console.error("Error in handleConfirm:", error);
+        }
+    };
 
 
-
-
-
-
-
-
+    const handleDeliver = async () => {
+        await handleDeliverOrder(newOrder?.orderDetails?.order_id)
+        Alert.alert("Order Delivered Successfully")
+        clearOrder()
+    }
     return (
         <View style={styles.container}>
             <View style={{ position: "absolute", top: 0, width: "100%", backgroundColor: "#202020", borderBottomStartRadius: 20, borderBottomEndRadius: 20, zIndex: 1, height: height * 0.10, padding: "5%" }}>
@@ -193,10 +240,6 @@ const Home = () => {
                     />
                 }
 
-
-
-
-
                 {userLat && userLon && (
                     <Marker
                         coordinate={{
@@ -229,7 +272,6 @@ const Home = () => {
                                         left: 50,
                                     },
                                     animated: true,
-
                                 });
                             }
                         }}
@@ -238,7 +280,41 @@ const Home = () => {
             </MapView>
 
             {
-                isNewOrder && <BottomPopup isAtResturant={isAtResturant} />
+                isNewOrder && <View style={{ position: "absolute", bottom: 0, width: "100%", backgroundColor: "#202020", borderTopStartRadius: 20, borderTopEndRadius: 20, zIndex: 1, padding: "5%" }}>
+                    <View style={{ borderColor: "#6D6D6D", borderRadius: 10, padding: "5%", borderWidth: 1 }}>
+                        <View>
+                            <Text style={{
+                                fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 15, textTransform: "uppercase", lineHeight: 22, fontWeight: "300"
+                            }}>pickup from</Text>
+                        </View>
+                        <View>
+                            <Text style={{ fontFamily: "OpenSans-Medium", color: "#fff", fontSize: 15, textTransform: "uppercase", lineHeight: 23 }}>Samci Restaurant</Text>
+                        </View>
+                        <View>
+                            <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 13, textTransform: "uppercase", lineHeight: 22 }}>102, Ist floor, Rehmat Apartments Rajbagh Srinagar</Text>
+                        </View>
+                        <View style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 5 }}>
+                            <IonIcons name="timer-outline" color="#fff" size={20} />
+                            <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 13, textTransform: "uppercase", lineHeight: 22 }}>5m Away</Text>
+                        </View>
+                        {
+                            btnStatus === "arrived" && isArrived && <TouchableOpacity onPress={handleArrived} style={{ backgroundColor: "#FA4A0C", height: 40, display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 25, marginTop: 10 }}>
+                                <Text style={{ color: "#fff", fontFamily: "OpenSans-Medium", fontSize: 12 }}>Arrived Order</Text>
+                            </TouchableOpacity>
+                        }
+                        {
+                            btnStatus === "confirmed" && isAtResturant && <TouchableOpacity onPress={handleConfirm} style={{ backgroundColor: "#FA4A0C", height: 40, display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 25, marginTop: 10 }}>
+                                <Text style={{ color: "#fff", fontFamily: "OpenSans-Medium", fontSize: 12 }}>Confirm Order</Text>
+                            </TouchableOpacity>
+                        }
+                        {
+                            btnStatus === "delivered" && <TouchableOpacity onPress={handleDeliver} style={{ backgroundColor: "#FA4A0C", height: 40, display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 25, marginTop: 10 }}>
+                                <Text style={{ color: "#fff", fontFamily: "OpenSans-Medium", fontSize: 12 }}>deliver Order</Text>
+                            </TouchableOpacity>
+                        }
+
+                    </View>
+                </View>
             }
         </View>
     )
@@ -255,69 +331,3 @@ const styles = StyleSheet.create({
 })
 
 
-const BottomPopup = ({ isAtResturant }) => {
-
-    const [btnStatus, setBtnStatus] = useState("confirmed")
-    const { handleConfirmOrder, loading } = useConfirmOrder()
-    const { handleArrivedOrder } = useArriveOrder()
-    const { handleDeliverOrder } = useDeliverOrder()
-    const { newOrder, clearOrder } = useOrder()
-
-
-
-
-
-
-    const handleArrived = async () => {
-        setBtnStatus("delivered")
-        await handleArrivedOrder(newOrder?.orderDetails?.order_id)
-    }
-
-    const handleConfirm = async () => {
-        setBtnStatus("arrived")
-        await handleConfirmOrder(newOrder?.orderDetails?.order_id)
-    }
-
-    const handleDeliver = async () => {
-        await handleDeliverOrder(newOrder?.orderDetails?.order_id)
-        Alert.alert("Order Delivered Successfully")
-        clearOrder()
-    }
-    return (
-        <View style={{ position: "absolute", bottom: 0, width: "100%", backgroundColor: "#202020", borderTopStartRadius: 20, borderTopEndRadius: 20, zIndex: 1, padding: "5%" }}>
-            <View style={{ borderColor: "#6D6D6D", borderRadius: 10, padding: "5%", borderWidth: 1 }}>
-                <View>
-                    <Text style={{
-                        fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 15, textTransform: "uppercase", lineHeight: 22, fontWeight: "300"
-                    }}>pickup from</Text>
-                </View>
-                <View>
-                    <Text style={{ fontFamily: "OpenSans-Medium", color: "#fff", fontSize: 15, textTransform: "uppercase", lineHeight: 23 }}>Samci Restaurant</Text>
-                </View>
-                <View>
-                    <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 13, textTransform: "uppercase", lineHeight: 22 }}>102, Ist floor, Rehmat Apartments Rajbagh Srinagar</Text>
-                </View>
-                <View style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 5 }}>
-                    <IonIcons name="timer-outline" color="#fff" size={20} />
-                    <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 13, textTransform: "uppercase", lineHeight: 22 }}>5m Away</Text>
-                </View>
-                {
-                    btnStatus === "arrived" && <TouchableOpacity onPress={handleArrived} style={{ backgroundColor: "#FA4A0C", height: 40, display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 25, marginTop: 10 }}>
-                        <Text style={{ color: "#fff", fontFamily: "OpenSans-Medium", fontSize: 12 }}>Arrived Order</Text>
-                    </TouchableOpacity>
-                }
-                {
-                    btnStatus === "confirmed" && <TouchableOpacity onPress={handleConfirm} style={{ backgroundColor: "#FA4A0C", height: 40, display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 25, marginTop: 10 }}>
-                        <Text style={{ color: "#fff", fontFamily: "OpenSans-Medium", fontSize: 12 }}>Confirm Order</Text>
-                    </TouchableOpacity>
-                }
-                {
-                    btnStatus === "delivered" && <TouchableOpacity onPress={handleDeliver} style={{ backgroundColor: "#FA4A0C", height: 40, display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 25, marginTop: 10 }}>
-                        <Text style={{ color: "#fff", fontFamily: "OpenSans-Medium", fontSize: 12 }}>deliver Order</Text>
-                    </TouchableOpacity>
-                }
-
-            </View>
-        </View>
-    )
-}

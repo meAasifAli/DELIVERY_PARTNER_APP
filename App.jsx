@@ -5,14 +5,18 @@ import AppNavigator from './src/config/AppNavigator';
 import { PersistGate } from 'redux-persist/integration/react';
 
 
+
+
 const App = () => {
 
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
+
         <OrderProvider>
           <AppNavigator />
         </OrderProvider>
+
       </PersistGate>
     </Provider>
 
