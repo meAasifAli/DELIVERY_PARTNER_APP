@@ -2,14 +2,22 @@ import { Dimensions, Image, StyleSheet, View } from 'react-native'
 const { height } = Dimensions.get("window")
 import { useState } from 'react';
 import useAuth from '../../hooks/useAuth';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setPhone } from '../../store/authSlice';
 import FormContainer from '../../components/auth/login/FormContainer';
 
+
+
 const Login = () => {
+
+
   const dispatch = useDispatch()
   const [mobile, setMobile] = useState("")
   const { handleAuthUser, loading } = useAuth()
+
+
+
+
 
 
   const handleAuth = async () => {

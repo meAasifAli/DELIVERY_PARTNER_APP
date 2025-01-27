@@ -6,6 +6,7 @@ export const OrderProvider = ({ children }) => {
     const [isNewOrder, setIsNewOrder] = useState(false)
     const [newOrder, setNewOrder] = useState(null);
     const [isOnline, setIsOnline] = useState(false)
+    const [deliveryStatus, setDeliveryStatus] = useState("")
     const placeOrder = (order) => {
         setNewOrder(order); // Set new order details
     };
@@ -16,7 +17,7 @@ export const OrderProvider = ({ children }) => {
     };
 
     return (
-        <OrderContext.Provider value={{ newOrder, placeOrder, clearOrder, setIsNewOrder, isNewOrder, isOnline, setIsOnline }}>
+        <OrderContext.Provider value={{ newOrder, placeOrder, clearOrder, setIsNewOrder, isNewOrder, isOnline, setIsOnline, deliveryStatus, setDeliveryStatus }}>
             {children}
         </OrderContext.Provider>
     );
