@@ -5,7 +5,7 @@ const { width, height } = Dimensions.get('window')
 
 const CenterText = () => {
     return (
-        <View>
+        <View style={{ marginVertical: 10 }}>
             <Text
                 style={{
                     fontSize: 40,

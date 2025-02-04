@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { Image, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import AntDesign from 'react-native-vector-icons/AntDesign'
 import FA from "react-native-vector-icons/FontAwesome"
 import { useDispatch } from 'react-redux'
