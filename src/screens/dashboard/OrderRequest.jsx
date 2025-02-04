@@ -1,6 +1,6 @@
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { useOrder } from '../../context/OrderContext';
+import React, { useContext, useEffect, useState } from 'react'
+import { OrderContext, useOrder } from '../../context/OrderContext';
 import { useNavigation } from '@react-navigation/native';
 import IonIcons from 'react-native-vector-icons/Ionicons'
 import Entypo from 'react-native-vector-icons/Entypo'
@@ -9,6 +9,7 @@ import SwipeButton from 'rn-swipe-button';
 import useAcceptOrder from '../../hooks/useAcceptOrder';
 
 const OrderRequest = () => {
+    const { setDeliveryStatus } = useContext(OrderContext)
     const { handleAcceptOrder } = useAcceptOrder()
     const navigation = useNavigation()
     const { newOrder, clearOrder, } = useOrder();
@@ -44,7 +45,12 @@ const OrderRequest = () => {
     }, [newOrder, navigation, clearOrder, timeLeft]);
 
     const handleAccept = async () => {
+        if (timeLeft <= 0) {
+            return;
+        }
+
         await handleAcceptOrder(newOrder.orderDetails?.order_id)
+        setDeliveryStatus("accepted")
     };
     const CheckoutButton = () => {
         return (
@@ -66,14 +72,14 @@ const OrderRequest = () => {
             </View>
             <View style={{ marginTop: "10%", width: "90%", marginHorizontal: "auto", }}>
                 <View style={{ borderColor: "#6D6D6D", borderWidth: 1, borderTopStartRadius: 10, borderTopEndRadius: 10 }}>
-                    <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 20, textAlign: "center", padding: "5%" }}>Expected Earning : <Text style={{ fontFamily: "OpenSans-Bold", color: "#fff", fontSize: 20 }}> Rs 75</Text></Text>
+                    <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 20, textAlign: "center", padding: "5%" }}>Expected Earning : <Text style={{ fontFamily: "OpenSans-Bold", color: "#fff", fontSize: 20 }}>{`Rs: ${newOrder?.orderDetails?.del_amount}`}</Text></Text>
                 </View>
                 <View style={{ borderColor: "#6D6D6D", borderWidth: 1, borderBottomStartRadius: 10, borderBottomEndRadius: 10, display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
                     <View style={{ borderRightColor: "#6D6D6D", borderRightWidth: 1, padding: "5%", display: "flex", justifyContent: "center", alignItems: "center", flex: 1 }}>
-                        <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 14, textAlign: "center", padding: "5%" }}>Pickup : <Text style={{ fontFamily: "OpenSans-Bold", color: "#fff", fontSize: 14 }}> 3 km</Text></Text>
+                        <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 14, textAlign: "center", padding: "5%" }}>Pickup : <Text style={{ fontFamily: "OpenSans-Bold", color: "#fff", fontSize: 14 }}>{`${newOrder?.orderDetails?.delivery_boy_route?.to_restaurant?.total_distance} km`}</Text></Text>
                     </View>
                     <View style={{ borderRightColor: "#6D6D6D", borderRightWidth: 1, padding: "5%", display: "flex", justifyContent: "center", alignItems: "center", flex: 1 }}>
-                        <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 14, textAlign: "center", padding: "5%" }}>Drop: <Text style={{ fontFamily: "OpenSans-Bold", color: "#fff", fontSize: 14 }}> 3.3 km</Text></Text>
+                        <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 14, textAlign: "center", padding: "5%" }}>Drop: <Text style={{ fontFamily: "OpenSans-Bold", color: "#fff", fontSize: 14 }}>{`${newOrder?.orderDetails?.delivery_boy_route?.full_journey?.total_distance} km`}</Text></Text>
                     </View>
                 </View>
             </View>
@@ -84,14 +90,14 @@ const OrderRequest = () => {
                     }}>pickup from</Text>
                 </View>
                 <View>
-                    <Text style={{ fontFamily: "OpenSans-Medium", color: "#fff", fontSize: 15, textTransform: "uppercase", lineHeight: 23 }}>Samci Restaurant</Text>
+                    <Text style={{ fontFamily: "OpenSans-Medium", color: "#fff", fontSize: 15, textTransform: "uppercase", lineHeight: 23 }}>{newOrder?.orderDetails?.restaurant_name}</Text>
                 </View>
                 <View>
-                    <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 13, textTransform: "uppercase", lineHeight: 22 }}>102, Ist floor, Rehmat Apartments Rajbagh Srinagar</Text>
+                    <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 13, textTransform: "uppercase", lineHeight: 22 }}>{`${newOrder?.orderDetails?.landmark}, ${newOrder?.orderDetails?.street}, ${newOrder?.orderDetails?.area}`}`</Text>
                 </View>
                 <View style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 5 }}>
                     <IonIcons name="timer-outline" color="#fff" size={20} />
-                    <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 13, textTransform: "uppercase", lineHeight: 22 }}>5m Away</Text>
+                    <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 13, textTransform: "uppercase", lineHeight: 22 }}>{newOrder?.orderDetails?.route_details?.total_distance}</Text>
                 </View>
             </View>
             <View style={{ justifyContent: "flex-end", padding: "5%" }}>

@@ -26,7 +26,7 @@ const useVerifyOtp = () => {
                 if (approved === "declined") {
                     Alert.alert("Your account has been declined by admin")
                 }
-                approved === "pending" ? navigation.navigate("onboarding") : dispatch(setIsAuthenticated(true))
+                approved === "waiting" ? navigation.navigate("onboarding") : dispatch(setIsAuthenticated(true))
             }
         } catch (error) {
             console.error("Error in authenticating user: ", error?.response?.data?.message)

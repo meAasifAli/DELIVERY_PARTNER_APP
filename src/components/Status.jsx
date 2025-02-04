@@ -1,24 +1,25 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Switch, StyleSheet } from "react-native";
-import { useSelector } from "react-redux";
+import { View, Text, Switch, StyleSheet, ToastAndroid } from "react-native";
 import { useOrder } from "../context/OrderContext";
+import { useEffect } from "react";
 
 
 const Status = () => {
-
-    const { latitude, longitude } = useSelector((state) => state?.location)
     const { isOnline, setIsOnline } = useOrder()
+    const showToast = (text) => {
+        ToastAndroid.show(text, ToastAndroid.CENTER, ToastAndroid.LONG);
+    };
+
+    useEffect(() => {
+        if (isOnline) {
+            showToast('✅ You are online! Ready to receive new orders.');
+        } else {
+            showToast('⚠️ You are offline.');
+        }
+    }, [isOnline]);
 
     const toggleSwitch = () => {
         setIsOnline(pre => !pre)
     };
-
-
-
-
-
-
-
     return (
         <View style={styles.container}>
             <Switch
