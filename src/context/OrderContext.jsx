@@ -12,7 +12,7 @@ export const OrderProvider = ({ children }) => {
         longitude: 0
     })
     const placeOrder = (order) => {
-        setNewOrder(order); // Set new order details
+        setNewOrder(order);
     };
 
     const clearOrder = () => {

@@ -4,9 +4,11 @@ import { BASEURL } from '../config/url'
 import { useNavigation } from '@react-navigation/native'
 import { useDispatch } from 'react-redux'
 import { setOtp } from '../store/authSlice'
+import useShowToast from './useShowToast'
 
 
 const useAuth = () => {
+    const showToast = useShowToast()
     const dispatch = useDispatch()
     const [loading, setLoading] = useState(false)
     const navigation = useNavigation()
@@ -21,8 +23,8 @@ const useAuth = () => {
                 navigation.navigate("otp")
             }
         } catch (error) {
-            console.error("Error in authenticating user: ", error?.response)
-            // Alert.alert("Error in authenticating user: ", error?.response?.data?.message)
+            console.error(error?.response?.data?.message)
+            showToast({ type: "error", text1: "Error in authenticating user: ", text2: error?.response?.data?.message })
             setLoading(false)
         }
         finally {

@@ -11,7 +11,7 @@ const PersonalDocs = () => {
 
     useEffect(() => {
         handleGetDeliveryDocStatus()
-    }, [])
+    }, [handleGetDeliveryDocStatus])
     // console.log(pendingDocs, completedDocs);
 
     return (

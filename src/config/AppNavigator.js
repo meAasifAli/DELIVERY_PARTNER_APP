@@ -71,8 +71,8 @@ const AppNavigator = () => {
             },
             {
                 enableHighAccuracy: true,
-                timeout: 60000
-
+                timeout: 60000,
+                maximumAge: 0,
             }
         );
     };
@@ -103,8 +103,8 @@ const AppNavigator = () => {
     // Start and stop location updates based on deliveryStatus
     useEffect(() => {
         requestLocationPermission();
-
-        if (deliveryStatus === "confirmed") {
+        // if (deliveryStatus === "accepted") return;
+        if (deliveryStatus === "confirmed" || deliveryStatus === "delivered" || deliveryStatus === "arrived") {
             startLocationUpdates();
         } else {
             if (watchIdRef.current !== null) {
@@ -119,7 +119,7 @@ const AppNavigator = () => {
                 watchIdRef.current = null;
             }
         };
-    }, [deliveryStatus]); // Run when `deliveryStatus` changes
+    }, [deliveryStatus]);
 
     return (
         <SocketProvider token={token}>

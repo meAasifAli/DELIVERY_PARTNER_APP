@@ -2,11 +2,13 @@ import axios from 'axios'
 import { useState } from 'react'
 import { BASEURL } from '../config/url'
 import { useSelector } from 'react-redux'
-import { Alert } from 'react-native'
+import { Alert, ToastAndroid } from 'react-native'
+import useShowToast from './useShowToast'
 
 
 
 const useDeliverOrder = () => {
+    const showToast = useShowToast()
     const [loading, setLoading] = useState(false)
     const { token } = useSelector(state => state?.auth)
     const handleDeliverOrder = async (orderId) => {
@@ -19,10 +21,10 @@ const useDeliverOrder = () => {
                 }
             })
             if (res?.data) {
-                Alert.alert("Order Has been Delivered")
+                showToast({ type: "success", text1: "Success", text2: "You have delivered the order" })
             }
         } catch (error) {
-            Alert.alert("Error in  Order Delivery: ", error?.response?.data?.message)
+            ToastAndroid.show("Error in  Order Delivery: ", error?.response?.data?.message)
             console.error("Error in Order Delivery : ", error?.response)
 
             setLoading(false)

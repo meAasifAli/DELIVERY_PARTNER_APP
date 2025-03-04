@@ -19,30 +19,30 @@ const OrderRequest = () => {
     console.log(newOrder);
 
 
-    useEffect(() => {
-        if (!newOrder) {
-            navigation.goBack();
-            return;
-        }
+    // useEffect(() => {
+    //     if (!newOrder) {
+    //         navigation.goBack();
+    //         return;
+    //     }
 
-        const timer = setInterval(() => {
-            setTimeLeft((prevTime) => {
-                if (prevTime <= 1) {
-                    clearInterval(timer);
+    //     const timer = setInterval(() => {
+    //         setTimeLeft((prevTime) => {
+    //             if (prevTime <= 1) {
+    //                 clearInterval(timer);
 
-                    // Wrap the `clearOrder` and `navigation.goBack` calls in `setTimeout`
-                    // to ensure they don't conflict with rendering.
-                    setTimeout(() => {
-                        clearOrder(); // Clear the order after timeout
-                        navigation.goBack();
-                    }, 0);
-                }
-                return prevTime - 1;
-            });
-        }, 1000);
+    //                 // Wrap the `clearOrder` and `navigation.goBack` calls in `setTimeout`
+    //                 // to ensure they don't conflict with rendering.
+    //                 setTimeout(() => {
+    //                     clearOrder(); // Clear the order after timeout
+    //                     navigation.goBack();
+    //                 }, 0);
+    //             }
+    //             return prevTime - 1;
+    //         });
+    //     }, 1000);
 
-        return () => clearInterval(timer);
-    }, [newOrder, navigation, clearOrder, timeLeft]);
+    //     return () => clearInterval(timer);
+    // }, [newOrder, navigation, clearOrder, timeLeft]);
 
     const handleAccept = async () => {
         if (timeLeft <= 0) {

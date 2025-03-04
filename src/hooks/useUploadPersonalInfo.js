@@ -5,10 +5,12 @@ import { useNavigation } from '@react-navigation/native'
 import { useDispatch, useSelector } from 'react-redux'
 import { Alert } from 'react-native'
 import { getDocs } from '../store/docSlice'
+import useShowToast from './useShowToast'
 
 
 
 const useUploadPersonalInfo = () => {
+    const showToast = useShowToast()
     const dispatch = useDispatch()
     const [loading, setLoading] = useState(false)
     const navigation = useNavigation()
@@ -23,12 +25,12 @@ const useUploadPersonalInfo = () => {
                 }
             })
             if (res?.data) {
-                Alert.alert("Peronsal Info Has been Added")
+                showToast({ type: "success", text1: "Success", text2: "Peronsal Info Has been Added" })
                 dispatch(getDocs({ token }))
                 setTimeout(() => navigation.goBack(), 500);
             }
         } catch (error) {
-            console.error("Error in uploading personal info ", error)
+            showToast({ type: "error", text1: "Error in uploading personal info ", text2: error })
             // Alert.alert("Error in authenticating user: ", error?.response?.data?.message)
             setLoading(false)
         }

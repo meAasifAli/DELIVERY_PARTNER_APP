@@ -5,11 +5,13 @@ import { useNavigation } from '@react-navigation/native'
 import { useSelector } from 'react-redux'
 import { Alert } from 'react-native'
 import useGetDeliveryDocStatus from './useGetDeliveryDocStatus'
+import useShowToast from './useShowToast'
 
 
 
 
 const useUploadPan = () => {
+    const showToast = useShowToast()
     const [loading, setLoading] = useState(false)
     const navigation = useNavigation()
     const { token } = useSelector((state) => state?.auth)
@@ -24,12 +26,12 @@ const useUploadPan = () => {
                 }
             })
             if (res?.data) {
-                Alert.alert("PAN Card Has been Uploaded Successfully")
+                showToast({ type: "success", text1: "Success", text2: "PAN Card Has been Uploaded Successfully" })
                 await handleGetDeliveryDocStatus()
                 setTimeout(() => navigation.goBack(), 500)
             }
         } catch (error) {
-            console.error("Error in uploading PAN ", error?.response?.data?.message)
+            showToast({ type: "error", text1: "Error in uploading PAN ", text2: error?.response?.data?.message })
             // Alert.alert("Error in authenticating user: ", error?.response?.data?.message)
             setLoading(false)
         }
