@@ -12,9 +12,10 @@ import MapViewDirections from 'react-native-maps-directions'
 import { API_KEY } from '../config/url'
 import haversineDistance from 'haversine-distance'
 import { useSocket } from '../context/Socketprovider'
-import FO from 'react-native-vector-icons/Fontisto'
 import Ionicons from 'react-native-vector-icons/Ionicons'
-import MA from 'react-native-vector-icons/MaterialIcons'
+import { useNavigation } from '@react-navigation/native'
+import useShowToast from '../hooks/useShowToast'
+
 
 
 
@@ -25,8 +26,7 @@ import MA from 'react-native-vector-icons/MaterialIcons'
 const Home = () => {
     const { deliveryStatus, setDeliveryStatus, deliveryCoords } = useContext(OrderContext)
     const mapRef = useRef(null);
-    const { isNewOrder, placeOrder, newOrder, isOnline, } = useOrder()
-    const { token } = useSelector((state) => state?.auth)
+    const { isNewOrder, placeOrder, newOrder, isOnline, clearOrder } = useOrder()
     const [isAtResturant, setIsAtResturant] = useState(false)
 
     const [isconfirmed, setIsConfirmed] = useState(false);
@@ -37,15 +37,7 @@ const Home = () => {
     const [routeCalculated, setRouteCalculated] = useState(false);
     const [restaurantCoords, setRestaurantCoords] = useState(null)
     const [userCoords, setUserCoords] = useState(null)
-    const previousCoords = useRef(null);
-    const rotation = useRef(new Animated.Value(0)).current;
-
-
-
     const socket = useSocket();
-
-
-    console.log("deliveryCoords: ", deliveryCoords);
 
 
 
@@ -63,7 +55,7 @@ const Home = () => {
 
 
 
-    // console.log(newOrder);
+
 
 
 
@@ -103,8 +95,6 @@ const Home = () => {
 
     useEffect(() => {
         if (!socket || !isconfirmed || !newOrder?.orderDetails?.order_id) return;
-
-        console.log("📡 Emitting updated location...");
         socket.emit("updateDeliveryBoyLocation", {
             location: { lat: deliveryCoords?.latitude, lng: deliveryCoords?.longitude },
             order_id: newOrder.orderDetails.order_id,
@@ -115,32 +105,24 @@ const Home = () => {
 
 
     useEffect(() => {
-        if (deliveryStatus !== "accepted") return;
-        // // Check if the delivery boy is at the restaurant (within 100 meters)
+
+        if (!deliveryCoords || !restaurantCoords || !userCoords) return;
+
         const distanceToRestaurant = haversineDistance(
             { latitude: deliveryCoords?.latitude, longitude: deliveryCoords?.longitude },
             { latitude: restaurantCoords?.latitude, longitude: restaurantCoords?.longitude }
         );
 
+        console.log("distanceToRestaurant: ", distanceToRestaurant);
+
         const distanceToUser = haversineDistance({ latitude: deliveryCoords?.latitude, longitude: deliveryCoords?.longitude },
             { latitude: userCoords?.latitude, longitude: userCoords?.longitude })
 
-        console.log("Distance to Restaurant:", distanceToRestaurant);
-        console.log("Distance to User: ", distanceToUser);
+        console.log("distanceToUser: ", distanceToUser);
 
 
-        if (distanceToRestaurant <= 100) {
-            setIsAtResturant(true);
-        } else {
-            setIsAtResturant(false);
-        }
-
-        if (distanceToUser <= 100 && isconfirmed) {
-            setIsArrived(true)
-        }
-        else {
-            setIsArrived(false)
-        }
+        setIsAtResturant(distanceToRestaurant <= 100 && deliveryStatus === "accepted");
+        setIsArrived(distanceToUser <= 100 && isconfirmed && deliveryStatus === "confirmed");
     }, [deliveryCoords, restaurantCoords, userCoords, isconfirmed, deliveryStatus])
 
     const handleArrived = async () => {
@@ -167,8 +149,10 @@ const Home = () => {
 
     const handleDeliver = async () => {
         await handleDeliverOrder(newOrder?.orderDetails?.order_id)
-        Alert.alert("Order Delivered Successfully")
+        setDeliveryStatus("delivered")
         clearOrder()
+        setRestaurantCoords(null)
+        setUserCoords(null)
     }
 
 
@@ -181,7 +165,6 @@ const Home = () => {
                     <View>
                         <Ionicons name="notifications-outline" color="#fff" size={25} />
                     </View>
-
                 </View>
             </View >
             <MapView
@@ -260,7 +243,7 @@ const Home = () => {
                             <Text style={{ fontFamily: "OpenSans-Regular", color: "#fff", fontSize: 13, textTransform: "uppercase", lineHeight: 22 }}>{newOrder?.orderDetails?.route_details?.total_distance}</Text>
                         </View>
                         {
-                            isArrived && deliveryStatus === "confirmed" && <TouchableOpacity onPress={handleArrived} style={{ backgroundColor: "#FA4A0C", height: 40, display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 25, marginTop: 10 }}>
+                            isArrived && <TouchableOpacity onPress={handleArrived} style={{ backgroundColor: "#FA4A0C", height: 40, display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 25, marginTop: 10 }}>
                                 <Text style={{ color: "#fff", fontFamily: "OpenSans-Medium", fontSize: 12 }}>Arrived Order</Text>
                             </TouchableOpacity>
                         }

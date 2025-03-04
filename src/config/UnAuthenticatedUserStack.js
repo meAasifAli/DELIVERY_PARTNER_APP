@@ -13,11 +13,33 @@ import UploadAdhar from '../screens/auth/UploadAdhar'
 import UploadPAN from '../screens/auth/UploadPAN'
 import UploadDrivingLicense from '../screens/auth/UploadDrivingLicense'
 import RegistrationComplete from '../screens/auth/RegistrationComplete'
+import { useDispatch, useSelector } from 'react-redux'
+import { useEffect } from 'react'
+import { getDocs } from '../store/docSlice'
+import { useNavigation } from '@react-navigation/native'
+
 
 
 
 const Stack = createNativeStackNavigator()
 const UnAuthenticatedUserStack = () => {
+    const dispatch = useDispatch()
+    const navigation = useNavigation()
+    const { completedDocs, pendingDocs } = useSelector(state => state?.doc)
+    const { token } = useSelector(state => state?.auth)
+    useEffect(() => {
+        dispatch(getDocs({ token }))
+    }, [])
+
+    // console.log("completed Docs: ", completedDocs);
+    // console.log("pending docs", pendingDocs)
+
+    useEffect(() => {
+        if (pendingDocs?.length > 0 && completedDocs?.length !== 0) {
+            navigation.navigate("onboarding")
+        }
+    }, [completedDocs, pendingDocs])
+
 
     return (
         <Stack.Navigator>

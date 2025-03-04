@@ -23,7 +23,7 @@ const UploadDrivingLicense = () => {
             })
             setDlUri([...dlUri, result])
         } catch (error) {
-            Alert.alert("Error in uploading Adhar: ", error?.message)
+            Alert.alert("Error in uploading DL: ", error?.message)
         }
     }
 
@@ -106,7 +106,7 @@ const Header = () => {
                 <AntDesign name="arrowleft" color="#fff" size={20} />
             </TouchableOpacity>
             <View >
-                <Text style={{ color: "#fff", fontSize: 18, fontFamily: "OpenSans-Bold", textAlign: "center" }}>Upload Your Adhar</Text>
+                <Text style={{ color: "#fff", fontSize: 18, fontFamily: "OpenSans-Bold", textAlign: "center" }}>Upload Your Driving License</Text>
             </View>
         </View>
     )

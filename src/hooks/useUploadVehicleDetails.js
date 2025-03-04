@@ -5,11 +5,13 @@ import { useNavigation } from '@react-navigation/native'
 import { useDispatch, useSelector } from 'react-redux'
 import { Alert } from 'react-native'
 import { getDocs } from '../store/docSlice'
+import useShowToast from './useShowToast';
 
 
 
 
 const useUploadVehicleDetails = () => {
+    const showToast = useShowToast()
     const dispatch = useDispatch()
     const [loading, setLoading] = useState(false)
     const navigation = useNavigation()
@@ -24,13 +26,16 @@ const useUploadVehicleDetails = () => {
                 }
             })
             if (res?.data) {
-                Alert.alert("Vehicle Details Has been Uploaded Successfully")
+                showToast({
+                    type: "success",
+                    text1: "success",
+                    text2: "Vehicle Details Uploaded Successfully",
+                })
                 dispatch(getDocs({ token }))
                 setTimeout(() => navigation.goBack(), 500)
             }
         } catch (error) {
-            console.error("Error in uploading Vehicle Delivery Details", error?.response)
-            // Alert.alert("Error in authenticating user: ", error?.response?.data?.message)
+            showToast({ type: "error", text1: "Error in uploading Vehicle Details: ", text2: error?.response?.data?.message })
             setLoading(false)
         }
         finally {

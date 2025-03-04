@@ -2,10 +2,12 @@ import axios from "axios"
 import { useState } from "react"
 import { BASEURL } from "../config/url"
 import { useSelector } from "react-redux"
+import useShowToast from "./useShowToast"
 
 
 
 const useGetDeliveryDocStatus = () => {
+    const showToast = useShowToast()
     const [loading, setLoading] = useState(false)
     const [pendingDocs, setPendingDocs] = useState([])
     const [completedDocs, setCompletedDocs] = useState([])
@@ -28,6 +30,7 @@ const useGetDeliveryDocStatus = () => {
             }
         } catch (error) {
             setLoading(false)
+            showToast({ type: "error", text1: "Error in getting docs status", text2: error?.response?.data?.message })
             console.error("Error in getting docs status: ", error)
         }
         finally {

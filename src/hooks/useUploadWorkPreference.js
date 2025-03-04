@@ -4,8 +4,10 @@ import { BASEURL } from '../config/url'
 import { useNavigation } from '@react-navigation/native'
 import { useSelector } from 'react-redux'
 import { Alert } from 'react-native'
+import useShowToast from './useShowToast'
 
 const useUploadWorkPreference = () => {
+    const showToast = useShowToast()
     const [loading, setLoading] = useState(false)
     const navigation = useNavigation()
     const { token } = useSelector((state) => state?.auth)
@@ -21,15 +23,14 @@ const useUploadWorkPreference = () => {
                 }
             })
             if (res?.data) {
-                Alert.alert("Work Shift has been Submitted Successfully")
+                showToast({ type: "success", text2: "Work Shift has been Submitted Successfully", text1: "Success" })
                 setTimeout(() => navigation.reset({
                     index: 0,
                     routes: [{ name: "registration-complete" }]
-                }), 500)
+                }), 5000)
             }
         } catch (error) {
             console.error("Error in uploading Work shiftings: ", error?.response)
-            // Alert.alert("Error in authenticating user: ", error?.response?.data?.message)
             setLoading(false)
         }
         finally {
